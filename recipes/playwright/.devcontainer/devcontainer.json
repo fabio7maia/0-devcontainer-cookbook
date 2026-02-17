@@ -1,0 +1,26 @@
+{
+  "name": "Playwright Testing",
+  "image": "mcr.microsoft.com/playwright:v1.40.0-jammy",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-playwright.playwright",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "playwright.reuseBrowser": true
+      }
+    }
+  },
+  "forwardPorts": [3000, 9323],
+  "postCreateCommand": "npm install",
+  "remoteUser": "pwuser"
+}

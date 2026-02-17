@@ -1,0 +1,100 @@
+name: Validate DevContainers
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  validate-recipes:
+    name: Validate ${{ matrix.recipe }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe: [node, python, go, fullstack, playwright]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and start DevContainer - ${{ matrix.recipe }}
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: devcontainer-cookbook-${{ matrix.recipe }}
+          cacheFrom: devcontainer-cookbook-${{ matrix.recipe }}
+          push: never
+          runCmd: |
+            echo "🔍 Running validation for ${{ matrix.recipe }}..."
+            if [ -f .devcontainer/validate.sh ]; then
+              chmod +x .devcontainer/validate.sh
+              ./.devcontainer/validate.sh
+            else
+              echo "⚠️  No validation script found"
+              exit 1
+            fi
+          subFolder: recipes/${{ matrix.recipe }}
+
+  test-cli:
+    name: Test CLI Tool
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test CLI - List recipes
+        run: |
+          chmod +x cli/dc.js
+          node cli/dc.js list
+
+      - name: Test CLI - Show help
+        run: node cli/dc.js help
+
+      - name: Test CLI - Copy recipe
+        run: |
+          mkdir -p /tmp/test-project
+          node cli/dc.js use node /tmp/test-project
+          
+          # Verify files were copied
+          if [ ! -f /tmp/test-project/.devcontainer/devcontainer.json ]; then
+            echo "❌ devcontainer.json not found"
+            exit 1
+          fi
+          
+          if [ ! -f /tmp/test-project/DEVCONTAINER.md ]; then
+            echo "❌ DEVCONTAINER.md not found"
+            exit 1
+          fi
+          
+          echo "✅ CLI test passed"
+
+  lint-json:
+    name: Lint JSON Files
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          echo "🔍 Validating JSON files..."
+          for file in $(find recipes -name "*.json"); do
+            echo "Checking $file..."
+            if ! python3 -m json.tool "$file" > /dev/null; then
+              echo "❌ Invalid JSON: $file"
+              exit 1
+            fi
+          done
+          echo "✅ All JSON files are valid"

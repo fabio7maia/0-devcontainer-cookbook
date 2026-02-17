@@ -1,0 +1,30 @@
+{
+  "name": "Go Development",
+  "image": "mcr.microsoft.com/devcontainers/go:1.21",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-vscode.makefile-tools"
+      ],
+      "settings": {
+        "go.toolsManagement.autoUpdate": true,
+        "go.useLanguageServer": true,
+        "go.lintOnSave": "package",
+        "go.formatTool": "gofmt",
+        "[go]": {
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          }
+        }
+      }
+    }
+  },
+  "forwardPorts": [8080, 9090],
+  "postCreateCommand": "go install golang.org/x/tools/gopls@latest && go install github.com/go-delve/delve/cmd/dlv@latest",
+  "remoteUser": "vscode"
+}
